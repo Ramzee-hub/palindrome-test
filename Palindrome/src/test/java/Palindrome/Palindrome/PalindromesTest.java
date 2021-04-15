@@ -41,11 +41,33 @@ public class PalindromesTest {
 
 	ExtentTest logger;
 	ExtentHtmlReporter htmlReporter;
+	
+	ChromeOptions options = new ChromeOptions();
+
+
+
+	boolean isPalindrome(String input) {
+		if(input == null) {
+			return false;
+		}
+		input = input.toLowerCase().replaceAll("\\s+", "");
+
+		int length = input.length();
+
+		if (!input.matches("^([a-z0-9]+)?$")) {
+			return false;
+		}
+		for (int i = 0; i < length / 2; i++) {
+			if (input.charAt(i) != input.charAt(length - i - 1)) {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	@BeforeClass(alwaysRun = true)
 	public void beforeTest() {
 		WebDriverManager.chromedriver().version("90.0.4430.24").setup();
-		ChromeOptions options = new ChromeOptions();
 		options.addArguments("start-maximized"); 
 		options.addArguments("enable-automation"); 
 		options.addArguments("--no-sandbox"); 
@@ -53,10 +75,6 @@ public class PalindromesTest {
 		options.addArguments("--disable-dev-shm-usage");
 		options.addArguments("--disable-browser-side-navigation"); 
 		options.addArguments("--disable-gpu"); 
-
-		driver = new ChromeDriver(options); 
-		driver.get("https://www.google.com/");	
-
 		htmlReporter = new ExtentHtmlReporter("C:\\Users\\User\\Documents\\seleniumExample\\test.html");
 
 		htmlReporter.config().setChartVisibilityOnOpen(true);
@@ -73,42 +91,52 @@ public class PalindromesTest {
 
 		driver.manage().deleteAllCookies();
 		driver.manage().window().maximize();
-		//		driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.SECONDS);
-
-
 	}
 
 	@Test
 	public void checkPageTitle() {
-		driver.get("https://www.google.com/");
+		driver = new ChromeDriver(options); 
+		driver.get("https://xndev.com/palindrome");
 		logger.log(Status.INFO, "Opened palindrome site");
 		AssertJUnit.assertEquals(driver.getTitle(), "The Palindrome Exercise - Excelon Development");
 		logger.log(Status.PASS, "Palindrome site is loaded");
 	}
 
 	@Test
-	@Parameters({"palString"})
-	public void palindromeTest(String palString) {
-		driver.findElement(By.id("originalWord")).sendKeys(palString);
+	public void alphaNumTest() {
+		driver = new ChromeDriver(options); 
+		driver.get("https://xndev.com/palindrome");
+		driver.findElement(By.id("originalWord")).sendKeys("4343nknnk4543n5knl");
 		driver.findElement(By.id("button1")).click();
-		String strInput = driver.findElement(By.id("originalWord")).getText().trim().toLowerCase();
-		int i = 0, j = strInput.length() - 1;
-		logger.log(Status.INFO, "Valid string entered");
+		AssertJUnit.assertFalse(this.isPalindrome("4343nknnk4543n5knl"));
+	}
 
-		while (i < j) {
-			if (strInput.charAt(i) != strInput.charAt(j)) {
-				logger.log(Status.FAIL, "Input is a not palindrome");
-				System.out.println("In loop");
 
-				System.out.println(j);
-			   return;}
-			i++;
-			j--;
-		}
-		
-		if(j == 0) {
-			logger.log(Status.FAIL, "Input is a not palindrome");
-		}
+	@Test
+	public void punctuationTest() {
+		driver = new ChromeDriver(options); 
+		driver.get("https://xndev.com/palindrome");
+		driver.findElement(By.id("originalWord")).sendKeys("ann.a!");
+		driver.findElement(By.id("button1")).click();
+		AssertJUnit.assertFalse(this.isPalindrome("ann.a!"));
+	}
+
+	@Test
+	public void nullStrTest() {
+		driver = new ChromeDriver(options); 
+		driver.get("https://xndev.com/palindrome");
+		driver.findElement(By.id("originalWord")).sendKeys("\0");
+		driver.findElement(By.id("button1")).click();
+		AssertJUnit.assertFalse(this.isPalindrome(null));
+	}
+
+	@Test
+	public void emptyStrTest() {
+		driver = new ChromeDriver(options); 
+		driver.get("https://xndev.com/palindrome");
+		driver.findElement(By.id("originalWord")).sendKeys("");
+		driver.findElement(By.id("button1")).click();
+		AssertJUnit.assertTrue(this.isPalindrome(""));
 	}
 
 
@@ -125,8 +153,9 @@ public class PalindromesTest {
 			logger.log(Status.SKIP, MarkupHelper.createLabel(result.getName()+" SKIPPED ", ExtentColor.ORANGE));
 			logger.skip(result.getThrowable());
 		}
-
 		extent.flush();
+		driver.close();
+
 
 	}
 
